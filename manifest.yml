@@ -31,6 +31,14 @@ modules:
         - audit-code-spec
         - record-spec-audit
         - get-sprint-spec-digest
+  jira:issuePanel:
+    - key: specguard-issue-panel
+      resource: main
+      resolver:
+        function: panelResolver
+      render: native
+      title: SpecGuard Sentinel
+      icon: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
   action:
     - key: get-issue-context
       name: Get Jira Issue Spec
@@ -118,6 +126,11 @@ modules:
       handler: index.recordSpecAudit
     - key: getSprintSpecDigest
       handler: index.getSprintSpecDigest
+    - key: panelResolver
+      handler: resolvers/index.handler
+resources:
+  - key: main
+    path: src/frontend/index.jsx
 permissions:
   scopes:
     - read:jira-work
