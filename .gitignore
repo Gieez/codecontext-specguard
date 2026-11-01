@@ -6,4 +6,7 @@ dist/
 build/
 *.log
 *.mp4
-assets/*.mp4
+*.mov
+*.webm
+out/
+render/
