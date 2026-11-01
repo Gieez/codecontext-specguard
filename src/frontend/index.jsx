@@ -19,7 +19,7 @@ import ForgeReconciler, {
   TagGroup,
   Spinner
 } from '@forge/react';
-import { invoke } from '@forge/bridge';
+import { invoke, view } from '@forge/bridge';
 
 const App = () => {
   const [loading, setLoading] = useState(true);
@@ -29,6 +29,7 @@ const App = () => {
   const [publishing, setPublishing] = useState(false);
   const [auditResult, setAuditResult] = useState(null);
   const [statusMessage, setStatusMessage] = useState(null);
+  const [currentIssueKey, setCurrentIssueKey] = useState('');
 
   // Load issue criteria on mount
   useEffect(() => {
@@ -37,10 +38,21 @@ const App = () => {
 
   const loadIssueSpec = async () => {
     setLoading(true);
+    setStatusMessage(null);
     try {
-      const res = await invoke('getIssueSpec');
-      if (res && !res.error) {
+      let key = '';
+      try {
+        const ctx = await view.getContext();
+        key = ctx?.extension?.issue?.key || ctx?.issue?.key || '';
+        if (key) setCurrentIssueKey(key);
+      } catch (e) {
+        console.warn('Could not read view.getContext():', e);
+      }
+
+      const res = await invoke('getIssueSpec', { issueKey: key });
+      if (res && res.success) {
         setIssueData(res);
+        if (res.issueKey) setCurrentIssueKey(res.issueKey);
       } else {
         setStatusMessage({ type: 'error', text: res?.error || 'Failed to load issue spec' });
       }
@@ -59,8 +71,11 @@ const App = () => {
     setAuditing(true);
     setStatusMessage(null);
     try {
-      const res = await invoke('runSpecAudit', { codeDiff: diffInput });
-      if (res && !res.error) {
+      const res = await invoke('runSpecAudit', {
+        issueKey: currentIssueKey,
+        codeDiff: diffInput
+      });
+      if (res && res.success) {
         setAuditResult(res);
         setStatusMessage({ type: 'success', text: `Audit completed: ${res.verdict} (${res.complianceScore}%)` });
       } else {
@@ -78,6 +93,7 @@ const App = () => {
     setPublishing(true);
     try {
       const res = await invoke('publishAudit', {
+        issueKey: currentIssueKey,
         verdict: auditResult.verdict,
         summary: auditResult.summary,
         complianceScore: auditResult.complianceScore
