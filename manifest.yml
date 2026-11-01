@@ -39,6 +39,15 @@ modules:
       render: native
       title: SpecGuard Sentinel
       icon: https://developer.atlassian.com/platform/forge/images/icons/issue-panel-icon.svg
+  jira:issueContext:
+    - key: specguard-issue-context
+      resource: main
+      resolver:
+        function: panelResolver
+      render: native
+      title: SpecGuard Sentinel
+      description: Spec compliance and acceptance criteria auditor
+      label: SpecGuard Sentinel
   action:
     - key: get-issue-context
       name: Get Jira Issue Spec
