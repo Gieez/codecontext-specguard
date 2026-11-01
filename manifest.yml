@@ -1,38 +1,129 @@
 modules:
+  rovo:mcp:
+    - key: codecontext-mcp-server
+      name: CodeContext MCP
+      tools:
+        - get-issue-context
+        - search-specs-prds
+        - audit-code-spec
+        - record-spec-audit
+        - get-sprint-spec-digest
   rovo:agent:
-    - key: codecontext-specguard-hello-world-agent
-      name: codecontext-specguard
-      description: An agent for testing Forge agent functionality
-      prompt: >
-        You are a simple agent that helps Forge developers build their first
-        Rovo agent.
-
-        You can create Forge logs by using the hello-world-logger action.
-
-        If the user hasn't provided a message when they ask you to create a log
-        ask them to provide one.
+    - key: specguard-agent
+      name: SpecGuard
+      description: Autonomous agent that audits code changes, PRs, and commits against Jira acceptance criteria and Confluence PRDs.
+      prompt: |
+        You are SpecGuard, an autonomous senior engineering agent specializing in requirement traceability, pull request audits, and spec compliance for software teams.
+        Your mission is to ensure code shipped matches the Jira issue acceptance criteria and Confluence product specifications.
+        When asked to audit code, pull request, or diff:
+        1. Use get-issue-context to fetch the exact acceptance criteria and description of the Jira issue.
+        2. Optionally use search-specs-prds to find related Confluence documentation or architectural decisions.
+        3. Use audit-code-spec to analyze the diff against the criteria and compute a compliance score.
+        4. If requested or appropriate, use record-spec-audit to publish the compliance verdict and details as a comment on the Jira issue.
       conversationStarters:
-        - Log a message to Forge logs
+        - Audit code diff against Jira issue
+        - Fetch acceptance criteria for issue
+        - Search Confluence for feature PRD
+        - Summarize sprint spec digest
       actions:
-        - hello-world-logger
+        - get-issue-context
+        - search-specs-prds
+        - audit-code-spec
+        - record-spec-audit
+        - get-sprint-spec-digest
   action:
-    - key: hello-world-logger
-      name: Log a message
-      function: messageLogger
+    - key: get-issue-context
+      name: Get Jira Issue Spec
+      function: getIssueContext
       actionVerb: GET
-      description: >
-        When a user asks to log a message, this action logs the message to the
-        Forge logs.
+      description: Fetches full Jira issue details including summary, status, description, acceptance criteria, assignee, and priority.
       inputs:
-        message:
-          title: Message
+        issueKey:
+          title: Issue Key
           type: string
           required: true
-          description: |
-            "The message that the user has requested be logged to Forge logs"
+          description: Jira issue key, e.g. KAN-1
+    - key: search-specs-prds
+      name: Search Confluence Specs
+      function: searchSpecsPrds
+      actionVerb: GET
+      description: Searches Confluence knowledge spaces for specifications, PRDs, and architecture documents matching keywords.
+      inputs:
+        query:
+          title: Search Query
+          type: string
+          required: true
+          description: Keywords or topic to search across Confluence specs
+    - key: audit-code-spec
+      name: Audit Code Implementation
+      function: auditCodeSpec
+      actionVerb: TRIGGER
+      description: Analyzes code diff or implementation summary against a Jira issue acceptance criteria. Returns compliance score, fulfilled criteria, missing items, and risks.
+      inputs:
+        issueKey:
+          title: Issue Key
+          type: string
+          required: true
+          description: Jira issue key to compare against
+        codeDiff:
+          title: Code Diff
+          type: string
+          required: true
+          description: Git diff, pull request description, or code implementation text
+    - key: record-spec-audit
+      name: Record Spec Audit in Jira
+      function: recordSpecAudit
+      actionVerb: CREATE
+      description: Publishes an audit compliance report directly as an official comment on the Jira issue.
+      inputs:
+        issueKey:
+          title: Issue Key
+          type: string
+          required: true
+          description: Jira issue key to post the audit to
+        verdict:
+          title: Audit Verdict
+          type: string
+          required: true
+          description: "Verdict: PASSED, NEEDS_WORK, or BLOCKED"
+        summary:
+          title: Summary
+          type: string
+          required: true
+          description: Brief summary of the audit findings
+        complianceScore:
+          title: Compliance Score
+          type: integer
+          required: true
+          description: Compliance percentage from 0 to 100
+    - key: get-sprint-spec-digest
+      name: Get Sprint Spec Digest
+      function: getSprintSpecDigest
+      actionVerb: GET
+      description: Summarizes all active Jira issues and their pending acceptance criteria for the current sprint or project.
+      inputs:
+        projectKey:
+          title: Project Key
+          type: string
+          required: true
+          description: Jira project key (e.g. KAN or PROJ)
   function:
-    - key: messageLogger
-      handler: index.messageLogger
+    - key: getIssueContext
+      handler: index.getIssueContext
+    - key: searchSpecsPrds
+      handler: index.searchSpecsPrds
+    - key: auditCodeSpec
+      handler: index.auditCodeSpec
+    - key: recordSpecAudit
+      handler: index.recordSpecAudit
+    - key: getSprintSpecDigest
+      handler: index.getSprintSpecDigest
+permissions:
+  scopes:
+    - read:jira-work
+    - write:jira-work
+    - read:confluence-content.all
+    - read:confluence-space.summary
 app:
   runtime:
     name: nodejs24.x
