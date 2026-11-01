@@ -1,0 +1,7 @@
+node_modules/
+.forge/
+.env
+.env.*
+dist/
+build/
+*.log
