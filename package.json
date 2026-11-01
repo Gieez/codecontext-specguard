@@ -4,7 +4,11 @@
   "description": "CodeContext SpecGuard: Autonomous Spec Audit & Traceability for Software Teams via Rovo and MCP",
   "main": "src/index.js",
   "private": true,
+  "type": "module",
   "license": "MIT",
+  "scripts": {
+    "test": "node test/specguard.test.js"
+  },
   "dependencies": {
     "@forge/api": "^8.4.0",
     "@forge/bridge": "^7.2.1",
